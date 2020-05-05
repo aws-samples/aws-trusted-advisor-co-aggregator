@@ -1,0 +1,7 @@
+samconfig.toml
+.DS_Store
+.aws-sam/*
+CostDatalake/.settings/*
+CostDataLake/.classpath
+CostDataLake/.project
+CostDataLake/target/*

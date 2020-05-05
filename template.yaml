@@ -1,0 +1,117 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  AWS-TrustedAdvisor-CO-Aggregator
+
+  SAM Template for aggregating , querying and visualizing 5 checks for trusted advisor
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 20
+
+
+Resources:
+
+  CostDatabase:
+    Type: AWS::Glue::Database
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseInput:
+        Description: "This is the database for storing budgets data"
+
+  TABucket:
+    Type: AWS::S3::Bucket
+
+
+  GlueRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "glue.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        - PolicyName: "AWSCURCrawlerComponentFunction"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - 's3:GetObject'
+                  - 's3:PutObject'
+                Resource: '*'
+              - Effect: "Allow"
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: "arn:aws:logs:*:*:*"
+              - Effect: "Allow"
+                Action:
+                  - 'glue:UpdateDatabase'
+                  - 'glue:UpdatePartition'
+                  - 'glue:CreateTable'
+                  - 'glue:UpdateTable'
+                  - 'glue:ImportCatalogToGlue'
+                Resource: "arn:aws:glue:*:*:*"
+
+
+
+
+  TAFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: CostDatalake
+      Handler: com.awssample.costdatalake.TrustedAdvisorFunction::handleRequest
+      Runtime: java11
+      MemorySize: 512
+      Environment:
+        Variables:
+          S3BUCKET: !Ref TABucket
+          ACCOUNTNO: !Ref AWS::AccountId
+      Events:
+        refreshInterval:
+          Type: Schedule
+          Properties:
+            Schedule: rate(1 day)
+            Enabled: True
+      Policies:
+        - Statement:
+            - Sid: TAS3
+              Effect: Allow
+              Action:
+                - s3:*
+                - trustedadvisor:*
+                - support:*
+              Resource: '*'
+
+
+  TACrawler:
+    Type: AWS::Glue::Crawler
+    Properties:
+      Name: "TACrawler"
+      Role: !GetAtt GlueRole.Arn
+      DatabaseName: !Ref CostDatabase
+      Targets:
+        S3Targets:
+          - Path: !Ref TABucket
+      SchemaChangePolicy:
+        UpdateBehavior: "UPDATE_IN_DATABASE"
+        DeleteBehavior: "LOG"
+      Schedule:
+        ScheduleExpression: "cron(15 12 * * ? *)" # More info : https://docs.aws.amazon.com/glue/latest/dg/monitor-data-warehouse-schedule.html
+
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  BudgetFunction:
+    Description: "Function to create csv file"
+    Value: !GetAtt TAFunction.Arn
