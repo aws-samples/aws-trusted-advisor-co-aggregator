@@ -37,7 +37,7 @@ public class TrustedAdvisorFunction implements RequestHandler<Object, Object> {
         int date = cal.get(Calendar.DAY_OF_MONTH) ;
         long unixTimestamp = Instant.now().getEpochSecond();
 
-        StringBuffer output_string = new StringBuffer("accountnumber,scandate,region,checkname,resourceid,metadata,currentcost\n");
+        StringBuffer output_string = new StringBuffer("accountnumber,scandate,region,checkname,resourceid,type,metadata,currentcost\n");
         var s3key = "year=" + year + "/month=" + month + "/date=" + date + "/ta.csv";
 
         TAChecks taChecks = new TAChecks();
@@ -54,6 +54,7 @@ public class TrustedAdvisorFunction implements RequestHandler<Object, Object> {
                         .append(resource.getMetadata().get(0)).append(",")
                         .append(desc).append(",")
                         .append(resource.getMetadata().get(1)).append(",")
+                        .append(resource.getMetadata().get(tc.getTypeMetaDataPosition())).append(",")
                         .append(String.join(" ~ ", resource.getMetadata())).append(",")
                         .append(resource.getMetadata().get(tc.getCostMetaDataPosition()).substring(1, resource.getMetadata().get(tc.getCostMetaDataPosition()).length())).append("\n");
 
