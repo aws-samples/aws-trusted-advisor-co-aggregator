@@ -61,8 +61,10 @@ Resources:
                   - 'glue:UpdateTable'
                   - 'glue:GetTable'
                   - 'glue:ImportCatalogToGlue'
-                  - "glue:GetDatabase"
-                  - "glue:GetDataBases"
+                  - 'glue:GetDatabase'
+                  - 'glue:GetDataBases'
+                  - 'glue:BatchGetPartition'
+                  - 'glue:BatchCreatePartition'
                 Resource: "arn:aws:glue:*:*:*"
 
 
