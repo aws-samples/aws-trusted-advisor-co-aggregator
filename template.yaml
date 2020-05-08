@@ -45,7 +45,7 @@ Resources:
               - Effect: "Allow"
                 Action:
                   - 's3:GetObject'
-                  - 's3:PutObject'
+                  - 's3:ListBucket'
                 Resource: '*'
               - Effect: "Allow"
                 Action:
@@ -59,7 +59,10 @@ Resources:
                   - 'glue:UpdatePartition'
                   - 'glue:CreateTable'
                   - 'glue:UpdateTable'
+                  - 'glue:GetTable'
                   - 'glue:ImportCatalogToGlue'
+                  - "glue:GetDatabase"
+                  - "glue:GetDataBases"
                 Resource: "arn:aws:glue:*:*:*"
 
 
@@ -96,7 +99,6 @@ Resources:
   TACrawler:
     Type: AWS::Glue::Crawler
     Properties:
-      Name: "TACrawler"
       Role: !GetAtt GlueRole.Arn
       DatabaseName: !Ref CostDatabase
       Targets:
