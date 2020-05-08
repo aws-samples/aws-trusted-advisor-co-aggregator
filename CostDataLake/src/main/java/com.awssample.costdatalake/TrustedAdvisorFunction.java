@@ -51,9 +51,9 @@ public class TrustedAdvisorFunction implements RequestHandler<Object, Object> {
 
                 output_string.append(accountnumber).append(",")
                         .append(unixTimestamp).append(",")
-                        .append(resource.getMetadata().get(0)).append(",")
+                        .append(resource.getMetadata().get(tc.getRegionMetaDataPosition())).append(",")
                         .append(desc).append(",")
-                        .append(resource.getMetadata().get(1)).append(",")
+                        .append(resource.getMetadata().get(tc.getResourceidMetaDataPosition())).append(",")
                         .append(resource.getMetadata().get(tc.getTypeMetaDataPosition())).append(",")
                         .append(String.join(" ~ ", resource.getMetadata())).append(",")
                         .append(resource.getMetadata().get(tc.getCostMetaDataPosition()).substring(1, resource.getMetadata().get(tc.getCostMetaDataPosition()).length())).append("\n");
