@@ -20,8 +20,47 @@ Resources:
       DatabaseInput:
         Description: "This is the database for storing budgets data"
 
+  # KMS S3 encryption key
+  s3Key:
+    Type: AWS::KMS::Key
+    Properties:
+      KeyPolicy:
+        Version: 2012-10-17
+        Id: key-s3
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Join
+                - ''
+                - - 'arn:aws:iam::'
+                  - !Ref 'AWS::AccountId'
+                  - ':root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Sid: Allow VPC Flow Logs to use the key as well
+            Effect: Allow
+            Principal:
+              Service:
+                - delivery.logs.amazonaws.com
+            Action: 'kms:GenerateDataKey*'
+            Resource: '*'
+  s3KeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: alias/s3
+      TargetKeyId:
+        Ref: s3Key
+
+
   TABucket:
     Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - ServerSideEncryptionByDefault:
+            KMSMasterKeyID: !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:${s3KeyAlias}'
+            SSEAlgorithm: 'aws:kms'
 
 
   GlueRole:
@@ -42,6 +81,11 @@ Resources:
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
+              - Effect: "Allow"
+                Action:
+                  - 'kms:GenerateDataKey'
+                  - 'kms:Decrypt'
+                Resource: "arn:aws:kms:*:*:*"
               - Effect: "Allow"
                 Action:
                   - 's3:GetObject'
@@ -66,6 +110,7 @@ Resources:
                   - 'glue:BatchGetPartition'
                   - 'glue:BatchCreatePartition'
                 Resource: "arn:aws:glue:*:*:*"
+
 
 
 
@@ -95,6 +140,7 @@ Resources:
                 - s3:*
                 - trustedadvisor:*
                 - support:*
+                - kms:*
               Resource: '*'
 
 
